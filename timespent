@@ -1,0 +1,87 @@
+#! /usr/bin/env ipso
+
+main : IO ()
+main =
+  comp
+    bind monday <- io.map string.trim <| cmd.read `date --date "last sunday + 1 day" +%Y-%m-%d`
+    let mondayDir = "$monday-week"
+    cmd.run `mkdir -p $mondayDir`
+
+    bind today <- io.map string.trim <| cmd.read `date +%Y-%m-%d`
+    let todayCsv = "$mondayDir/$today.csv"
+    
+    bind todayCsvExists <- path.exists todayCsv
+    bind new <-
+      if todayCsvExists
+      then
+        comp
+          println "$todayCsv found, opening..."
+          io.pure false
+      else
+        comp
+          println "$todayCsv not found, creating..."
+          cmd.run `cp template.csv $todayCsv`
+          io.pure true
+   
+    bind editor <- env.getvar! "EDITOR"
+    cmd.run `$editor $todayCsv`
+
+    bind changed <-
+      comp
+        bind result <- cmd.try `git diff --quiet $todayCsv`
+        case result of
+          Success () ->
+            # no changes
+            io.pure false
+          Failure 1 ->
+            io.pure true
+          Failure code ->
+            comp
+              println "error: git diff --quiet $todayCsv exited with unexpected status: ${int.toString code}"
+              exit.failure
+
+    if not (changed || new)
+      then println "no changes detected"
+      else
+        comp
+          bind commitHashes <- cmd.lines `git log --grep=^$today\$ --pretty=%H`
+          
+          case array.length commitHashes of
+            0 ->
+              comp
+                cmd.run `git add $todayCsv`
+                cmd.run `git commit -m $today`
+            1 ->
+              comp
+                cmd.run `git add $todayCsv`
+
+                bind hasUnstagedFiles <- 
+                  io.map (\unstagedFiles -> array.length unstagedFiles != 0) <|
+                  cmd.lines `git diff --name-only`
+               
+                let targetCommitHash = array.index 0 commitHashes
+                
+                cmd.run `git commit -m "squash! $targetCommitHash"`
+
+                # `git rebase` doesn't work when there are unstaged files, so
+                # stash anything yet unstaged.
+                if hasUnstagedFiles
+                  then cmd.run `git stash`
+                  else io.pure ()
+
+                # https://github.com/LightAndLight/ipso/issues/330
+                # `git rebase -i --autosquash $targetCommitHash^` |>
+                #   cmd.withenv "GIT_EDITOR" "true" |>
+                #   cmd.run
+                env.setvar "GIT_EDITOR" "true"
+                cmd.run `git rebase -i --autosquash $targetCommitHash^`
+
+                if hasUnstagedFiles
+                  then cmd.run `git stash pop`
+                  else io.pure ()
+            _ ->
+              comp
+                println "error: found multiple commits mentioning $today: ${debug commitHashes}"
+                exit.failure
+    
+    println "done"
