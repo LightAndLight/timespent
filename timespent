@@ -45,21 +45,18 @@ main =
       else
         comp
           bind commitHashes <- cmd.lines `git log --grep=^$today\$ --pretty=%H`
-          
-          case array.length commitHashes of
-            0 ->
+          case commitHashes of
+            [] ->
               comp
                 cmd.run `git add $todayCsv`
                 cmd.run `git commit -m $today`
-            1 ->
+            [targetCommitHash] ->
               comp
                 cmd.run `git add $todayCsv`
 
                 bind hasUnstagedFiles <- 
                   io.map (\unstagedFiles -> array.length unstagedFiles != 0) <|
                   cmd.lines `git diff --name-only`
-               
-                let targetCommitHash = array.index 0 commitHashes
                 
                 cmd.run `git commit -m "squash! $targetCommitHash"`
 
