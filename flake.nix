@@ -51,7 +51,7 @@
 
           postFixup = ''
             wrapProgram $out/bin/timespent \
-              --set TEMPLATE_FILE=$out/template.csv
+              --set TEMPLATE_FILE $out/template.csv
           '';
         };
       }
