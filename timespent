@@ -28,6 +28,7 @@ main =
         comp
           println "$todayCsv not found, creating..."
           cmd.run `cp $templateFile $todayCsv`
+          cmd.run `chmod +rw $todayCsv`
           io.pure true
    
     bind editor <- env.getvar! "EDITOR"
