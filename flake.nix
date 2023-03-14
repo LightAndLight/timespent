@@ -32,6 +32,10 @@
           buildInputs = [
             packages.ipso
           ];
+
+          nativeBuildInputs = [
+            pkgs.makeWrapper
+          ];
           
           buildPhase = "true";
           
