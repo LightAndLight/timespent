@@ -105,11 +105,11 @@
         "rust-overlay": "rust-overlay_2"
       },
       "locked": {
-        "lastModified": 1676237158,
-        "narHash": "sha256-3gKcxzLEgs1jpOEk18TcxtAdp9xGI4VycABlpXT7xFQ=",
+        "lastModified": 1678340216,
+        "narHash": "sha256-eNlKEEzKDPga9M2yt7y9fp72iJw5agMW++SE5H/T2dw=",
         "owner": "LightAndLight",
         "repo": "ipso",
-        "rev": "1f7ffccbf4f84b7ac51d0a21f5ad68a856b8d3d7",
+        "rev": "a2f308171efc1202831b3142246494d58c367ed5",
         "type": "github"
       },
       "original": {
