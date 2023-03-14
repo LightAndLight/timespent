@@ -3,6 +3,13 @@
 main : IO ()
 main =
   comp
+    bind templateFileVar? <- env.getvar "TEMPLATE_FILE"
+    let 
+      templateFile = 
+        case templateFileVar? of
+          None () -> "./template.csv"
+          Some templateFile -> templateFile
+
     bind monday <- io.map string.trim <| cmd.read `date --date "last sunday + 1 day" +%Y-%m-%d`
     let mondayDir = "$monday-week"
     cmd.run `mkdir -p $mondayDir`
@@ -20,7 +27,7 @@ main =
       else
         comp
           println "$todayCsv not found, creating..."
-          cmd.run `cp template.csv $todayCsv`
+          cmd.run `cp $templateFile $todayCsv`
           io.pure true
    
     bind editor <- env.getvar! "EDITOR"
