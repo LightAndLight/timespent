@@ -43,10 +43,12 @@
             cp timespent $out/bin
             
             cp template.csv $out
+          ''; 
 
+          postFixup = ''
             wrapProgram $out/bin/timespent \
               --set TEMPLATE_FILE=$out/template.csv
-          ''; 
+          '';
         };
       }
     );
