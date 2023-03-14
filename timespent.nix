@@ -1,9 +1,9 @@
-{ stdenv, nix-filter, ipso, makeWrapper, templateFile ? "$out/template.csv" }: stdenv.mkDerivation {
+{ stdenv, nix-filter, ipso, makeWrapper, templateFile ? "$out/template.txt" }: stdenv.mkDerivation {
   name = "timespent";
   src = nix-filter.lib {
     root = ./.;
     include = [
-      "template.csv"
+      "template.txt"
       "timespent"
     ];
   };
@@ -25,7 +25,7 @@
     chmod +x timespent 
     cp timespent $out/bin
     
-    cp template.csv $out
+    cp template.txt $out
   ''; 
 
   postFixup = ''

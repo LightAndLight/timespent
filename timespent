@@ -3,11 +3,12 @@
 main : IO ()
 main =
   comp
+    let suffix = "txt"
     bind templateFileVar? <- env.getvar "TEMPLATE_FILE"
     let 
       templateFile = 
         case templateFileVar? of
-          None () -> "./template.csv"
+          None () -> "./template.$suffix"
           Some templateFile -> templateFile
 
     bind monday <- io.map string.trim <| cmd.read `date --date "last sunday + 1 day" +%Y-%m-%d`
@@ -15,28 +16,28 @@ main =
     cmd.run `mkdir -p $mondayDir`
 
     bind today <- io.map string.trim <| cmd.read `date +%Y-%m-%d`
-    let todayCsv = "$mondayDir/$today.csv"
+    let todayFile = "$mondayDir/$today.$suffix"
     
-    bind todayCsvExists <- path.exists todayCsv
+    bind todayFileExists <- path.exists todayFile
     bind new <-
-      if todayCsvExists
+      if todayFileExists
       then
         comp
-          println "$todayCsv found, opening..."
+          println "$todayFile found, opening..."
           io.pure false
       else
         comp
-          println "$todayCsv not found, creating..."
-          cmd.run `cp $templateFile $todayCsv`
-          cmd.run `chmod +rw $todayCsv`
+          println "$todayFile not found, creating..."
+          cmd.run `cp $templateFile $todayFile`
+          cmd.run `chmod +rw $todayFile`
           io.pure true
    
     bind editor <- env.getvar! "EDITOR"
-    cmd.run `$editor $todayCsv`
+    cmd.run `$editor $todayFile`
 
     bind changed <-
       comp
-        bind result <- cmd.try `git diff --quiet $todayCsv`
+        bind result <- cmd.try `git diff --quiet $todayFile`
         case result of
           Success () ->
             # no changes
@@ -45,7 +46,7 @@ main =
             io.pure true
           Failure code ->
             comp
-              println "error: git diff --quiet $todayCsv exited with unexpected status: ${int.toString code}"
+              println "error: git diff --quiet $todayFile exited with unexpected status: ${int.toString code}"
               exit.failure
 
     if not (changed || new)
@@ -56,11 +57,11 @@ main =
           case commitHashes of
             [] ->
               comp
-                cmd.run `git add $todayCsv`
+                cmd.run `git add $todayFile`
                 cmd.run `git commit -m $today`
             [targetCommitHash] ->
               comp
-                cmd.run `git add $todayCsv`
+                cmd.run `git add $todayFile`
 
                 bind hasUnstagedFiles <- 
                   io.map (\unstagedFiles -> array.length unstagedFiles != 0) <|
